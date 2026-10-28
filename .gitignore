@@ -1,0 +1,15 @@
+node_modules/
+.env
+.env.local
+data/*.json
+!data/.gitkeep
+*.log
+*.bak
+test-*.js
+inspect-*.js
+print-*.js
+find-*.js
+check-*.js
+.DS_Store
+.idea/
+.vscode/

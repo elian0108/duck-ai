@@ -1,0 +1,10 @@
+{
+  "env": {
+    "ANTHROPIC_BASE_URL": "http://127.0.0.1:3000/v1",
+    "ANTHROPIC_AUTH_TOKEN": "duckai-free",
+    "ANTHROPIC_API_KEY": "duckai-free"
+  },
+  "model": "claude-3-5-sonnet-20241022",
+  "hasCompletedOnboarding": true,
+  "theme": "dark"
+}

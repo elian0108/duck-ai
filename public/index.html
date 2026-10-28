@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DuckAI Gateway | Modelos Oficiais & Monitor de Capacidade</title>
+  <meta name="description" content="Painel executivo de controle e catálogo de modelos de inteligência artificial oficiais do Duck.ai compatível com a API OpenAI.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <!-- Ambient background glow elements -->
+  <div class="ambient-glow glow-orange"></div>
+  <div class="ambient-glow glow-cyan"></div>
+  <div class="ambient-glow glow-purple"></div>
+
+  <!-- Header -->
+  <header class="top-nav">
+    <div class="nav-container">
+      <div class="brand">
+        <div class="brand-badge">
+          <svg viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <rect width="40" height="40" rx="12" fill="url(#duck-grad)"/>
+            <path d="M20 10C15.58 10 12 13.58 12 18C12 21.03 13.68 23.66 16.17 25.01C16.06 25.64 16 26.31 16 27C16 30.31 18.69 33 22 33C25.31 33 28 30.31 28 27C28 25.46 27.42 24.06 26.47 23C27.43 21.6 28 19.88 28 18C28 13.58 24.42 10 20 10Z" fill="white"/>
+            <ellipse cx="27" cy="19" rx="5" ry="3.5" fill="#FFA726"/>
+            <circle cx="17.5" cy="16.5" r="2" fill="#1E293B"/>
+            <circle cx="18" cy="16" r="0.8" fill="white"/>
+            <defs>
+              <linearGradient id="duck-grad" x1="0" y1="0" x2="40" y2="40" gradientUnits="userSpaceOnUse">
+                <stop stop-color="#FF6B00"/>
+                <stop offset="1" stop-color="#FF9E00"/>
+              </linearGradient>
+            </defs>
+          </svg>
+        </div>
+        <div class="brand-info">
+          <h1>DuckAI <span>Gateway</span></h1>
+          <div class="brand-sub">
+            <span class="pill-duck">🦆 Modelos Nativos Duck.ai</span>
+            <span class="live-pill"><span class="dot-live"></span> <span id="header-status-text">Online</span></span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <div class="endpoint-box" id="btn-copy-endpoint" title="Clique para copiar Base URL">
+          <span class="endpoint-label">Base URL:</span>
+          <code id="endpoint-text">http://127.0.0.1:3000/v1</code>
+          <button class="icon-copy-btn" aria-label="Copiar endpoint">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+          </button>
+        </div>
+        <button class="btn-refresh" id="btn-manual-refresh" title="Atualizar dados agora">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Dashboard Container -->
+  <main class="dashboard-main">
+    
+    <!-- TOP SECTION: CAPACITY & REMAINING QUOTA -->
+    <section class="capacity-hero-card">
+      <div class="card-glow-bg"></div>
+      
+      <div class="capacity-header">
+        <div class="capacity-title-block">
+          <span class="badge-accent">Capacidade & Cota Operacional</span>
+          <h2>Quanto Pode Ser Usado Ainda</h2>
+          <p class="capacity-desc">Monitoramento em tempo real da cota diária estimada e do limite de requisições disponíveis para os modelos do Duck.ai.</p>
+        </div>
+        <div class="reset-timer-box">
+          <span class="timer-label">Renovação da Cota Diária</span>
+          <span class="timer-value" id="reset-timer-val">--h --m --s</span>
+          <span class="timer-sub">Reset automático à meia-noite</span>
+        </div>
+      </div>
+
+      <div class="capacity-grid">
+        <!-- Big Meter -->
+        <div class="meter-block">
+          <div class="radial-container">
+            <svg class="progress-ring" width="160" height="160">
+              <circle class="ring-bg" stroke="rgba(255,255,255,0.08)" stroke-width="12" fill="transparent" r="68" cx="80" cy="80"/>
+              <circle class="ring-indicator" id="quota-ring" stroke="url(#ring-gradient)" stroke-width="12" stroke-linecap="round" fill="transparent" r="68" cx="80" cy="80"/>
+              <defs>
+                <linearGradient id="ring-gradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                  <stop offset="0%" stop-color="#10B981"/>
+                  <stop offset="100%" stop-color="#06B6D4"/>
+                </linearGradient>
+              </defs>
+            </svg>
+            <div class="ring-content">
+              <span class="ring-percent" id="quota-percent-val">100%</span>
+              <span class="ring-caption">Disponível</span>
+            </div>
+          </div>
+          <div class="meter-details">
+            <div class="big-metric-row">
+              <span class="big-number" id="remaining-quota-num">--</span>
+              <span class="big-unit">requisições restantes hoje</span>
+            </div>
+            <div class="progress-bar-wrapper">
+              <div class="progress-bar-fill" id="quota-bar-fill" style="width: 100%;"></div>
+            </div>
+            <div class="progress-labels">
+              <span>Usadas hoje: <strong id="used-today-num">0</strong></span>
+              <span>Cota estimada: <strong id="daily-quota-num">150</strong> req/dia</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Status & Concurrency Details -->
+        <div class="status-summary-block">
+          <div class="health-alert-box normal" id="rate-limit-banner">
+            <div class="alert-icon" id="rate-limit-icon">🟢</div>
+            <div class="alert-text">
+              <strong id="rate-limit-title">Backend Duck.ai 100% Operacional</strong>
+              <p id="rate-limit-subtitle">Sem restrições ou limitações de taxa ativas. Pronto para receber chamadas em todos os modelos oficiais.</p>
+            </div>
+          </div>
+
+          <div class="concurrency-pills-card">
+            <div class="concurrency-header">
+              <span>Slots de Concorrência Paralela</span>
+              <span class="workers-count-badge" id="workers-badge">2 / 2 Livres</span>
+            </div>
+            <div class="workers-slots" id="workers-slots-container">
+              <!-- Rendered via JS -->
+              <div class="worker-slot idle">
+                <span class="slot-dot"></span>
+                <span class="slot-name">Worker 1</span>
+                <span class="slot-status">Ocioso (Pronto)</span>
+              </div>
+              <div class="worker-slot idle">
+                <span class="slot-dot"></span>
+                <span class="slot-name">Worker 2</span>
+                <span class="slot-status">Ocioso (Pronto)</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- METRICS GRID: CONSUMPTION -->
+    <section class="metrics-section">
+      <div class="section-title-row">
+        <h3>Métricas de Uso do Servidor</h3>
+        <span class="section-badge">Telemetria de Consumo</span>
+      </div>
+
+      <div class="metrics-grid">
+        <div class="metric-card">
+          <div class="metric-icon-wrap icon-reqs">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          </div>
+          <div class="metric-body">
+            <span class="metric-label">Total de Requisições</span>
+            <span class="metric-main-val" id="metric-total-requests">0</span>
+            <span class="metric-foot" id="metric-today-sub">0 processadas hoje</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon-wrap icon-tokens">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/><polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/></svg>
+          </div>
+          <div class="metric-body">
+            <span class="metric-label">Tokens Processados</span>
+            <span class="metric-main-val" id="metric-total-tokens">0</span>
+            <span class="metric-foot" id="metric-tokens-sub">Prompt + Completion</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon-wrap icon-latency">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          </div>
+          <div class="metric-body">
+            <span class="metric-label">Latência Média</span>
+            <span class="metric-main-val" id="metric-avg-latency">-- ms</span>
+            <span class="metric-foot text-green">Tempo de Resposta Ágil</span>
+          </div>
+        </div>
+
+        <div class="metric-card">
+          <div class="metric-icon-wrap icon-health">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+          </div>
+          <div class="metric-body">
+            <span class="metric-label">Taxa de Sucesso</span>
+            <span class="metric-main-val" id="metric-success-rate">100%</span>
+            <span class="metric-foot text-cyan" id="metric-uptime-sub">Uptime: 0s</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- NEW SECTION: OFFICIAL DUCK.AI MODELS SHOWCASE -->
+    <section class="models-catalog-section" id="models-catalog">
+      <div class="section-title-row">
+        <div>
+          <span class="badge-accent">Catálogo Oficial</span>
+          <h3 class="catalog-main-title">Modelos do Duck.ai</h3>
+          <p class="catalog-sub-desc">Os 6 modelos nativos e oficiais suportados diretamente pela infraestrutura Duck.ai. Clique para copiar o ID ou testar ao vivo.</p>
+        </div>
+        <div class="models-filter-pills" id="models-filter-pills">
+          <button class="filter-pill active" data-filter="all">Todos (6)</button>
+          <button class="filter-pill" data-filter="OpenAI">OpenAI (2)</button>
+          <button class="filter-pill" data-filter="Anthropic">Anthropic (1)</button>
+          <button class="filter-pill" data-filter="Mistral AI">Mistral (1)</button>
+          <button class="filter-pill" data-filter="Tinfoil">Open Enclave (2)</button>
+        </div>
+      </div>
+
+      <!-- Models Grid Cards -->
+      <div class="models-showcase-grid" id="models-showcase-grid">
+        
+        <!-- Card 1: Mistral Small 4 -->
+        <div class="duck-model-card default-pick" data-model-id="mistral-small-2603" data-provider="Mistral AI">
+          <div class="duck-card-glow"></div>
+          <div class="duck-card-header">
+            <div class="provider-info">
+              <span class="provider-pill provider-mistral">Mistral AI</span>
+              <span class="model-badge badge-recommended">⭐ Recomendado / Tools</span>
+            </div>
+            <span class="context-pill">16K Context</span>
+          </div>
+          
+          <div class="duck-card-body">
+            <h4 class="duck-model-name">Mistral Small 4</h4>
+            <div class="duck-model-id-bar">
+              <code class="model-code-id">mistral-small-2603</code>
+              <button class="btn-copy-model-id" title="Copiar ID do modelo" data-copy="mistral-small-2603">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="duck-model-desc">Modelo de alta precisão para chamadas de ferramentas, raciocínio computacional e desenvolvimento de software.</p>
+            
+            <div class="duck-model-tags">
+              <span class="tag-chip">Tool Calling</span>
+              <span class="tag-chip">Código & Dev</span>
+              <span class="tag-chip">Default</span>
+            </div>
+          </div>
+
+          <div class="duck-card-footer">
+            <button class="btn-select-model" data-select-model="mistral-small-2603">
+              <span>Testar no Console</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 2: GPT-6 Luna -->
+        <div class="duck-model-card" data-model-id="gpt-6-luna" data-provider="OpenAI">
+          <div class="duck-card-glow"></div>
+          <div class="duck-card-header">
+            <div class="provider-info">
+              <span class="provider-pill provider-openai">OpenAI</span>
+              <span class="model-badge badge-openai">Flagship Multiuso</span>
+            </div>
+            <span class="context-pill">16K Context</span>
+          </div>
+          
+          <div class="duck-card-body">
+            <h4 class="duck-model-name">GPT-6 Luna</h4>
+            <div class="duck-model-id-bar">
+              <code class="model-code-id">gpt-6-luna</code>
+              <button class="btn-copy-model-id" title="Copiar ID do modelo" data-copy="gpt-6-luna">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="duck-model-desc">Ideal para o dia a dia. Raciocínio ágil, alta precisão, fluência verbal e versatilidade em múltiplas tarefas.</p>
+            
+            <div class="duck-model-tags">
+              <span class="tag-chip">Raciocínio Ágil</span>
+              <span class="tag-chip">Multiuso</span>
+              <span class="tag-chip">Alta Precisão</span>
+            </div>
+          </div>
+
+          <div class="duck-card-footer">
+            <button class="btn-select-model" data-select-model="gpt-6-luna">
+              <span>Testar no Console</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 3: Claude Haiku 4.5 -->
+        <div class="duck-model-card" data-model-id="claude-haiku-4-5" data-provider="Anthropic">
+          <div class="duck-card-glow"></div>
+          <div class="duck-card-header">
+            <div class="provider-info">
+              <span class="provider-pill provider-anthropic">Anthropic</span>
+              <span class="model-badge badge-anthropic">Redação & Código</span>
+            </div>
+            <span class="context-pill">16K Context</span>
+          </div>
+          
+          <div class="duck-card-body">
+            <h4 class="duck-model-name">Claude Haiku 4.5</h4>
+            <div class="duck-model-id-bar">
+              <code class="model-code-id">claude-haiku-4-5</code>
+              <button class="btn-copy-model-id" title="Copiar ID do modelo" data-copy="claude-haiku-4-5">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="duck-model-desc">Excelente para síntese textual, redação fluida, respostas analíticas e geração de código limpo e conciso.</p>
+            
+            <div class="duck-model-tags">
+              <span class="tag-chip">Síntese Analítica</span>
+              <span class="tag-chip">Código Limpo</span>
+              <span class="tag-chip">Redação Fluida</span>
+            </div>
+          </div>
+
+          <div class="duck-card-footer">
+            <button class="btn-select-model" data-select-model="claude-haiku-4-5">
+              <span>Testar no Console</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 4: GPT-5.4 mini -->
+        <div class="duck-model-card" data-model-id="gpt-5.4-mini" data-provider="OpenAI">
+          <div class="duck-card-glow"></div>
+          <div class="duck-card-header">
+            <div class="provider-info">
+              <span class="provider-pill provider-openai">OpenAI</span>
+              <span class="model-badge badge-fast">⚡ Ultrarrápido</span>
+            </div>
+            <span class="context-pill">16K Context</span>
+          </div>
+          
+          <div class="duck-card-body">
+            <h4 class="duck-model-name">GPT-5.4 mini</h4>
+            <div class="duck-model-id-bar">
+              <code class="model-code-id">gpt-5.4-mini</code>
+              <button class="btn-copy-model-id" title="Copiar ID do modelo" data-copy="gpt-5.4-mini">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="duck-model-desc">Sólido e veloz, otimizado para tarefas curtas, extração de dados e respostas imediatas em tempo recorde.</p>
+            
+            <div class="duck-model-tags">
+              <span class="tag-chip">Baixíssima Latência</span>
+              <span class="tag-chip">Respostas Curtas</span>
+              <span class="tag-chip">Velocidade</span>
+            </div>
+          </div>
+
+          <div class="duck-card-footer">
+            <button class="btn-select-model" data-select-model="gpt-5.4-mini">
+              <span>Testar no Console</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 5: gpt-oss 120B -->
+        <div class="duck-model-card" data-model-id="tinfoil/gpt-oss-120b" data-provider="Tinfoil">
+          <div class="duck-card-glow"></div>
+          <div class="duck-card-header">
+            <div class="provider-info">
+              <span class="provider-pill provider-tinfoil">OpenAI / Tinfoil</span>
+              <span class="model-badge badge-enclave">🔒 Enclave Seguro</span>
+            </div>
+            <span class="context-pill">16K Context</span>
+          </div>
+          
+          <div class="duck-card-body">
+            <h4 class="duck-model-name">gpt-oss 120B</h4>
+            <div class="duck-model-id-bar">
+              <code class="model-code-id">tinfoil/gpt-oss-120b</code>
+              <button class="btn-copy-model-id" title="Copiar ID do modelo" data-copy="tinfoil/gpt-oss-120b">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="duck-model-desc">120 bilhões de parâmetros open-source executados em enclaves privados criptografados com zero rastreamento.</p>
+            
+            <div class="duck-model-tags">
+              <span class="tag-chip">120B Parâmetros</span>
+              <span class="tag-chip">Confidencial</span>
+              <span class="tag-chip">Pesos Abertos</span>
+            </div>
+          </div>
+
+          <div class="duck-card-footer">
+            <button class="btn-select-model" data-select-model="tinfoil/gpt-oss-120b">
+              <span>Testar no Console</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Card 6: Gemma 4 31B Beta -->
+        <div class="duck-model-card" data-model-id="tinfoil/gemma4-31b" data-provider="Tinfoil">
+          <div class="duck-card-glow"></div>
+          <div class="duck-card-header">
+            <div class="provider-info">
+              <span class="provider-pill provider-google">Google / Tinfoil</span>
+              <span class="model-badge badge-google">Google Beta</span>
+            </div>
+            <span class="context-pill">16K Context</span>
+          </div>
+          
+          <div class="duck-card-body">
+            <h4 class="duck-model-name">Gemma 4 31B Beta</h4>
+            <div class="duck-model-id-bar">
+              <code class="model-code-id">tinfoil/gemma4-31b</code>
+              <button class="btn-copy-model-id" title="Copiar ID do modelo" data-copy="tinfoil/gemma4-31b">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              </button>
+            </div>
+            <p class="duck-model-desc">Modelo aberto de última geração desenvolvido pelo Google DeepMind com 31 bilhões de parâmetros.</p>
+            
+            <div class="duck-model-tags">
+              <span class="tag-chip">Google DeepMind</span>
+              <span class="tag-chip">31B Parâmetros</span>
+              <span class="tag-chip">Enclave Seguro</span>
+            </div>
+          </div>
+
+          <div class="duck-card-footer">
+            <button class="btn-select-model" data-select-model="tinfoil/gemma4-31b">
+              <span>Testar no Console</span>
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- INTERACTIVE TESTER & INTEGRATION SPLIT -->
+    <div class="split-layout" id="live-console-area">
+      
+      <!-- INTERACTIVE MODEL PLAYGROUND -->
+      <section class="interactive-tester-card">
+        <div class="card-title-header">
+          <div class="tester-logo-pill">
+            <span class="tester-icon">⚡</span>
+            <h3>Console Interativo Duck.ai</h3>
+          </div>
+          <span class="tag-protocol">Streaming SSE Ativo</span>
+        </div>
+        <p class="tester-lead">
+          Envie um prompt de teste em tempo real para qualquer um dos modelos oficiais do Duck.ai e observe a resposta fluindo:
+        </p>
+
+        <div class="tester-controls-row">
+          <div class="tester-model-picker">
+            <label for="tester-model-select">Modelo Duck.ai Selecionado:</label>
+            <select id="tester-model-select" class="form-select-model">
+              <option value="mistral-small-2603" selected>Mistral Small 4 (mistral-small-2603)</option>
+              <option value="gpt-6-luna">GPT-6 Luna (gpt-6-luna)</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5 (claude-haiku-4-5)</option>
+              <option value="gpt-5.4-mini">GPT-5.4 mini (gpt-5.4-mini)</option>
+              <option value="tinfoil/gpt-oss-120b">gpt-oss 120B (tinfoil/gpt-oss-120b)</option>
+              <option value="tinfoil/gemma4-31b">Gemma 4 31B Beta (tinfoil/gemma4-31b)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="prompt-presets-bar">
+          <span class="presets-caption">Sugestões:</span>
+          <button class="preset-btn" data-prompt="Escreva um haicai inspirador sobre programação.">Haicai de Código</button>
+          <button class="preset-btn" data-prompt="Quais são as 3 principais vantagens do motor Duck.ai?">Vantagens Duck.ai</button>
+          <button class="preset-btn" data-prompt="Crie uma função simples em Python para calcular fatorial.">Fatorial Python</button>
+        </div>
+
+        <div class="tester-input-box">
+          <textarea id="tester-prompt-input" rows="3" placeholder="Digite sua mensagem para o modelo do Duck.ai...">Escreva um haicai inspirador sobre programação.</textarea>
+          <div class="tester-actions-row">
+            <button class="btn-run-test" id="btn-run-test">
+              <span id="btn-run-text">Enviar Requisição</span>
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+            </button>
+          </div>
+        </div>
+
+        <!-- Output response window -->
+        <div class="tester-output-wrapper">
+          <div class="output-header">
+            <span class="output-title">Resposta do Modelo</span>
+            <div class="output-metrics">
+              <span class="output-stat" id="output-status-stat">Status: Aguardando</span>
+              <span class="output-stat" id="output-latency-stat">Latência: --</span>
+            </div>
+          </div>
+          <div class="output-content-box" id="tester-output-box">
+            <span class="output-placeholder">A resposta gerada pelo modelo Duck.ai aparecerá aqui em tempo real...</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- QUICK INTEGRATION CODE SNIPPETS -->
+      <section class="integration-card">
+        <div class="card-title-header">
+          <div class="harness-logo-pill">
+            <span class="dsh-icon">💻</span>
+            <h3>Como Conectar aos Modelos Duck.ai</h3>
+          </div>
+          <span class="tag-protocol">OpenAI API V1</span>
+        </div>
+        <p class="integration-lead">
+          Conecte qualquer biblioteca padrão ou agente ao Gateway usando o modelo Duck.ai ativo:
+        </p>
+
+        <!-- Integration Tabs -->
+        <div class="code-tabs-nav">
+          <button class="code-tab-btn active" data-tab="tab-curl">cURL</button>
+          <button class="code-tab-btn" data-tab="tab-python">Python</button>
+          <button class="code-tab-btn" data-tab="tab-node">Node.js</button>
+          <button class="code-tab-btn" data-tab="tab-yaml">settings.yaml</button>
+          <button class="code-tab-btn" data-tab="tab-env">.env</button>
+        </div>
+
+        <div class="code-snippet-card">
+          <div class="snippet-header">
+            <span class="snippet-filename" id="snippet-filename">Requisição cURL</span>
+            <button class="btn-copy-code" id="btn-copy-code" title="Copiar código">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>
+              <span>Copiar Código</span>
+            </button>
+          </div>
+          <pre><code id="snippet-content" class="code-display"></code></pre>
+        </div>
+
+        <div class="models-mapping-list">
+          <h4>Modelos Oficiais do Duck.ai Disponíveis:</h4>
+          <div class="model-map-item">
+            <div class="model-map-tag"><code class="clickable-model" data-model="mistral-small-2603" title="Clique para selecionar e copiar">mistral-small-2603</code></div>
+            <div class="model-map-arrow">•</div>
+            <div class="model-map-desc"><strong>Mistral Small 4</strong> — Modelo recomendado para ferramentas e dev.</div>
+          </div>
+          <div class="model-map-item">
+            <div class="model-map-tag"><code class="clickable-model" data-model="gpt-6-luna" title="Clique para selecionar e copiar">gpt-6-luna</code></div>
+            <div class="model-map-arrow">•</div>
+            <div class="model-map-desc"><strong>GPT-6 Luna (OpenAI)</strong> — Raciocínio ágil, alta precisão e versatilidade.</div>
+          </div>
+          <div class="model-map-item">
+            <div class="model-map-tag"><code class="clickable-model" data-model="claude-haiku-4-5" title="Clique para selecionar e copiar">claude-haiku-4-5</code></div>
+            <div class="model-map-arrow">•</div>
+            <div class="model-map-desc"><strong>Claude Haiku 4.5 (Anthropic)</strong> — Síntese analítica e código limpo.</div>
+          </div>
+          <div class="model-map-item">
+            <div class="model-map-tag"><code class="clickable-model" data-model="gpt-5.4-mini" title="Clique para selecionar e copiar">gpt-5.4-mini</code></div>
+            <div class="model-map-arrow">•</div>
+            <div class="model-map-desc"><strong>GPT-5.4 mini (OpenAI)</strong> — Respostas ultrarrápidas em tempo recorde.</div>
+          </div>
+          <div class="model-map-item">
+            <div class="model-map-tag"><code class="clickable-model" data-model="tinfoil/gpt-oss-120b" title="Clique para selecionar e copiar">tinfoil/gpt-oss-120b</code></div>
+            <div class="model-map-arrow">•</div>
+            <div class="model-map-desc"><strong>gpt-oss 120B (OpenAI/Tinfoil)</strong> — 120B parâmetros em enclave privado.</div>
+          </div>
+          <div class="model-map-item">
+            <div class="model-map-tag"><code class="clickable-model" data-model="tinfoil/gemma4-31b" title="Clique para selecionar e copiar">tinfoil/gemma4-31b</code></div>
+            <div class="model-map-arrow">•</div>
+            <div class="model-map-desc"><strong>Gemma 4 31B Beta (Google)</strong> — Modelo aberto de 31B do Google DeepMind.</div>
+          </div>
+        </div>
+      </section>
+
+    </div>
+
+    <!-- USAGE & FEED ROW -->
+    <div class="split-layout">
+      <!-- USAGE BY MODEL BREAKDOWN -->
+      <section class="model-usage-card">
+        <div class="card-title-header">
+          <h3>Distribuição de Uso por Modelo</h3>
+          <span class="tag-counter" id="models-active-counter">0 Modelos Usados</span>
+        </div>
+        <p class="model-usage-sub">Volume de requisições e tokens gerados por cada modelo do gateway Duck.ai.</p>
+        
+        <div class="model-bars-container" id="model-bars-container">
+          <div class="empty-usage-state">
+            <div class="empty-icon">📊</div>
+            <p>Nenhuma requisição recebida ainda hoje.</p>
+            <span>Faça uma chamada ou use o console de teste acima para visualizar o consumo.</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- LIVE API LOG FEED -->
+      <section class="live-feed-card">
+        <div class="feed-header">
+          <div class="feed-title-block">
+            <div class="feed-pulse-dot"></div>
+            <h3>Histórico Recente de Requisições</h3>
+          </div>
+          <span class="feed-badge" id="feed-count-badge">0 chamadas registradas</span>
+        </div>
+
+        <div class="feed-table-wrapper">
+          <table class="feed-table">
+            <thead>
+              <tr>
+                <th>Horário</th>
+                <th>Endpoint</th>
+                <th>Modelo Duck.ai</th>
+                <th>Status</th>
+                <th>Latência</th>
+                <th>Tokens</th>
+              </tr>
+            </thead>
+            <tbody id="live-feed-tbody">
+              <tr class="empty-row">
+                <td colspan="6">
+                  <div class="empty-feed">
+                    <span>Aguardando chamadas da API na porta 3000...</span>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+
+  </main>
+
+  <!-- Toast Notification -->
+  <div class="toast-notification" id="toast-notify">
+    <span class="toast-icon">✓</span>
+    <span class="toast-msg" id="toast-msg">Copiado com sucesso!</span>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
